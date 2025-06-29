@@ -1,3 +1,5 @@
+[New!] Please also check [WAFT](https://github.com/princeton-vl/WAFT), our new efficient state-of-the-art method. 
+
 # SEA-RAFT
 
 [[Paper](https://arxiv.org/abs/2405.14793)][[Slides](https://docs.google.com/presentation/d/1xZn-NowHuPqfdLDAaQwKyzYvP4HzGmT7/edit?usp=sharing&ouid=118125745783453356964&rtpof=true&sd=true)]
