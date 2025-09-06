@@ -1,3 +1,0 @@
-"""
-SEA-RAFT root package
-"""
