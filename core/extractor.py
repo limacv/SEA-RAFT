@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from layer import BasicBlock, conv1x1, conv3x3
+from core.layer import BasicBlock, conv1x1, conv3x3
 
 class ResNetFPN(nn.Module):
     """
