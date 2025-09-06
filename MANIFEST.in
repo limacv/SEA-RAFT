@@ -1,0 +1,12 @@
+include README.md
+include LICENSE
+include requirements.txt
+include *.txt
+recursive-include core *.py
+recursive-include config *.json
+recursive-include searaft *.py
+recursive-include checkpoints *.pth
+global-exclude *.pyc
+global-exclude __pycache__
+global-exclude .git*
+global-exclude *.egg-info
