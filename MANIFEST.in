@@ -1,0 +1,7 @@
+include *.txt
+include *.md
+include *.py
+include LICENSE
+recursive-include core *.py
+recursive-include core/utils *.py
+recursive-include config *.json
