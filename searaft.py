@@ -47,23 +47,42 @@ class SEA_RAFT(torch.nn.Module):
         load_ckpt(self.raft, checkpoint_path)
 
     @torch.no_grad()
-    def forward(self, image1, image2, iters=4, scale=-1):
-        # image: [B, 3, H, W] in [0, 1]
-        img1 = F.interpolate(image1, scale_factor=2 ** scale, mode='bilinear', align_corners=False)
-        img2 = F.interpolate(image2, scale_factor=2 ** scale, mode='bilinear', align_corners=False)
+    def forward(self, image1, image2, iters=4, scale=0.5):
+        # image: [B, 3, H, W] in [0, 255]
+        img1 = F.interpolate(image1, scale_factor=scale, mode='bilinear', align_corners=False)
+        img2 = F.interpolate(image2, scale_factor=scale, mode='bilinear', align_corners=False)
         H, W = img1.shape[2:]
         output = self.raft(img1, img2, iters=4, test_mode=True)
         flow = output['flow'][-1]
         info = output['info'][-1]
-        flow_down = F.interpolate(flow, scale_factor=0.5 ** scale, mode='bilinear', align_corners=False) * (0.5 ** scale)
-        info_down = F.interpolate(info, scale_factor=0.5 ** scale, mode='area')
+        flow_down = F.interpolate(flow, scale_factor=1 / scale, mode='bilinear', align_corners=False)
+        flow_down = flow_down * (1.0 / scale)
+        info_down = F.interpolate(info, scale_factor=1 / scale, mode='area')
         return flow_down, info_down
+
+
+def remap(image, flow):   # image in [B, C, H, W], flow in [B, H, W, 2]
+    if image.ndim == 3:
+        image = image[None]
+    if flow.ndim == 3:
+        flow = flow[None]
+
+    _, c, h, w = image.shape
+
+    # Normalize grid to [-1, 1]
+    grid_y, grid_x = torch.meshgrid(torch.arange(h), torch.arange(w), indexing='ij')
+    grid = torch.stack((grid_x, grid_y), dim=-1).float().type_as(flow)[None] + flow
+    grid[..., 0] = 2.0 * grid[..., 0] / (w - 1) - 1.0
+    grid[..., 1] = 2.0 * grid[..., 1] / (h - 1) - 1.0
+    remapped = torch.nn.functional.grid_sample(image, grid, mode='bilinear', align_corners=True)
+    return remapped
 
 
 if __name__ == "__main__":
     import cv2
     from core.utils.flow_viz import flow_to_image
     import time
+    import imageio
 
     raft = SEA_RAFT("./checkpoints/Tartan-C-T-TSKH-spring540x960-M.pth")
     image1 = cv2.imread("./custom/image1.jpg")
@@ -76,11 +95,14 @@ if __name__ == "__main__":
     image1 = image1[None].cuda()
     image2 = image2[None].cuda()
     raft = raft.cuda()
-    for i in range(100):
+    for i in range(4):
         start = time.time()
-        flow, info = raft(image1, image2, scale=0)
+        flow, info = raft(image1, image2)
         end = time.time()
         print(f"time: {end - start:.4f}s")
 
     flow_vis = flow_to_image(flow[0].permute(1, 2, 0).cpu().numpy(), convert_to_bgr=True)
     cv2.imwrite(f"./custom/flow_new.jpg", flow_vis)
+    flow = flow.permute(0, 2, 3, 1)  # [B, H, W, 2]
+    remapped_image = remap(image2, flow)
+    imageio.imwrite(f"./custom/remapped_new.jpg", remapped_image[0].permute(1, 2, 0).cpu().numpy().astype('uint8'))
