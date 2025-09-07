@@ -15,9 +15,9 @@ class RAFT(
     nn.Module,
     # PyTorchModelHubMixin, 
     # optionally, you can add metadata which gets pushed to the model card
-    repo_url="https://github.com/princeton-vl/SEA-RAFT",
-    pipeline_tag="optical-flow-estimation",
-    license="bsd-3-clause",
+    # repo_url="https://github.com/princeton-vl/SEA-RAFT",
+    # pipeline_tag="optical-flow-estimation",
+    # license="bsd-3-clause",
 ):
     def __init__(self, args):
         super().__init__()
